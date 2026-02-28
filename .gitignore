@@ -1,0 +1,24 @@
+# This is a .gitignore file for Unity projects
+
+# All files in the Library folder are ignored
+[Ll]ibrary/
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# User-specific files
+*.csproj
+*.sln
+*.userprefs
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Visual Studio Code files
+.vscode/
+
+# Rider files
+.idea/
