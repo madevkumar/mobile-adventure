@@ -1,67 +1,82 @@
-using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D))]
-public class PlayerController : MonoBehaviour, IRewindable {
-    public float movementSpeed = 5f;
-    public float jumpForce = 5f;
-    private bool isGrounded;
-    public LayerMask groundLayer;
+/// <summary>
+/// PlayerController handles core player movement and platforming mechanics.
+/// Integrates with TimeLoopManager for time manipulation.
+/// </summary>
+public class PlayerController : MonoBehaviour
+{
+    [Header("Movement")]
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float jumpForce = 5f;
+    [SerializeField] private float groundDrag = 5f;
+    [SerializeField] private float airDrag = 2f;
+
+    [Header("Ground Check")]
+    [SerializeField] private float groundDragDistance = 0.2f;
+    [SerializeField] private LayerMask groundLayer;
+
+    [Header("References")]
     private Rigidbody2D rb;
+    private TimeLoopManager timeLoopManager;
+    private bool isGrounded;
+    private float horizontalInput;
+    private bool jumpInput;
 
-    private struct PlayerSnapshot {
-        public Vector2 Position;
-        public Vector2 Velocity;
-    }
-
-    private readonly LinkedList<PlayerSnapshot> _history = new LinkedList<PlayerSnapshot>();
-
-    void Start() {
+    private void Start()
+    {
         rb = GetComponent<Rigidbody2D>();
-        if (TimeLoopController.Instance != null)
-            TimeLoopController.Instance.Register(this);
+        timeLoopManager = FindObjectOfType<TimeLoopManager>();
     }
 
-    void OnDestroy() {
-        if (TimeLoopController.Instance != null)
-            TimeLoopController.Instance.Unregister(this);
+    private void Update()
+    {
+        HandleInput();
+        CheckGrounded();
     }
 
-    void Update() {
-        // Block player input while time is rewinding.
-        if (TimeLoopController.Instance != null && TimeLoopController.Instance.IsRewinding)
-            return;
+    private void FixedUpdate()
+    {
         Move();
-        Jump();
+        ApplyDrag();
     }
 
-    private void Move() {
-        float moveInput = Input.GetAxis("Horizontal");
-        rb.velocity = new Vector2(moveInput * movementSpeed, rb.velocity.y);
-    }
+    private void HandleInput()
+    {
+        horizontalInput = Input.GetAxis("Horizontal");
+        jumpInput = Input.GetKeyDown(KeyCode.Space);
 
-    private void Jump() {
-        isGrounded = Physics2D.OverlapCircle(transform.position, 0.1f, groundLayer);
-        if (isGrounded && Input.GetButtonDown("Jump")) {
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+        if (jumpInput && isGrounded)
+        {
+            Jump();
         }
     }
 
-    public void RecordState(int maxFrames) {
-        _history.AddLast(new PlayerSnapshot {
-            Position = rb.position,
-            Velocity = rb.velocity,
-        });
-        while (_history.Count > maxFrames)
-            _history.RemoveFirst();
+    private void Move()
+    {
+        rb.velocity = new Vector2(horizontalInput * moveSpeed, rb.velocity.y);
     }
 
-    public void RewindState() {
-        if (_history.Count == 0)
-            return;
-        PlayerSnapshot snap = _history.Last.Value;
-        _history.RemoveLast();
-        rb.position = snap.Position;
-        rb.velocity = snap.Velocity;
+    private void Jump()
+    {
+        rb.velocity = new Vector2(rb.velocity.x, 0);
+        rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+    }
+
+    private void ApplyDrag()
+    {
+        rb.drag = isGrounded ? groundDrag : airDrag;
+    }
+
+    private void CheckGrounded()
+    {
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, groundDragDistance, groundLayer);
+        isGrounded = hit.collider != null;
+    }
+
+    public void ResetPosition(Vector3 position)
+    {
+        transform.position = position;
+        rb.velocity = Vector3.zero;
     }
 }
