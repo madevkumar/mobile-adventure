@@ -46,5 +46,14 @@ To get started with development:
 - Introduce new mechanics and abilities based on player feedback.
 - Optimize for various mobile devices to ensure a smooth experience.
 
+## Jarvis Assistant Foundation
+This repository now includes a modular in-project assistant foundation at `/Assets/Scripts/Assistant` with:
+- Startup greeting with local date/time output.
+- Optional non-AI voice playback using a prerecorded audio clip.
+- Command routing for code-generation and computer-control requests.
+- Automatic code-generation templates for app, game, web, ML, and DL prompts.
+- Permission toggles for microphone, camera, and computer control.
+- Confirmation-gated computer-control stubs with action logging.
+
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
